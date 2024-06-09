@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:tfm_app/energyUsageModel.dart';
 
+import 'modelManager.dart';
 import 'networkManager.dart';
 
 void main() {
@@ -63,7 +65,7 @@ class _MyHomePageState extends State<MyHomePage> {
     apiKey: 'aqq4bImibxaazx04RzKe5aXZb62gzvG5810dINkF',
   );
 
-  String data = '';
+  late Future<ApiResponse> futureApiResponse;
 
   @override
   void initState() {
@@ -73,14 +75,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> fetchData() async {
     try {
-      final response = await networkManager.getRequest('/default');
-      setState(() {
-        data = response.body;
-      });
+      futureApiResponse = networkManager.getRequest('/default');
     } catch (e) {
-      setState(() {
-        data = 'Failed to load data';
-      });
+      //ERROR
     }
   }
 
@@ -114,36 +111,31 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title),
       ),
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            Text(
-              data,
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+        child: FutureBuilder<ApiResponse>(
+          future: futureApiResponse,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const CircularProgressIndicator();
+            } else if (snapshot.hasError) {
+              return Text('Error: ${snapshot.error}');
+            } else if (snapshot.hasData) {
+              final energyUsage = snapshot.data!.data.energyUsage;
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Status: ${snapshot.data!.status}'),
+                  Text('Message: ${snapshot.data!.message}'),
+                  Text('Local Time: ${energyUsage.localTime}'),
+                  Text('Data: ${energyUsage.data.join(', ')}'),
+                  Text('Start Timestamp: ${energyUsage.startTimestamp}'),
+                  Text('End Timestamp: ${energyUsage.endTimestamp}'),
+                  Text('Interval: ${energyUsage.interval}'),
+                ],
+              );
+            } else {
+              return const Text('No data found');
+            }
+          },
         ),
       ),
       floatingActionButton: FloatingActionButton(
