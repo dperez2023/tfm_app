@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'networkManager.dart';
+
 void main() {
   runApp(const MyApp());
 }
@@ -56,6 +58,31 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  final networkManager = NetworkManager(
+    baseUrl: 'https://tyca98nbse.execute-api.eu-north-1.amazonaws.com',
+    apiKey: 'aqq4bImibxaazx04RzKe5aXZb62gzvG5810dINkF',
+  );
+
+  String data = '';
+
+  @override
+  void initState() {
+    super.initState();
+    fetchData();
+  }
+
+  Future<void> fetchData() async {
+    try {
+      final response = await networkManager.getRequest('/default');
+      setState(() {
+        data = response.body;
+      });
+    } catch (e) {
+      setState(() {
+        data = 'Failed to load data';
+      });
+    }
+  }
 
   void _incrementCounter() {
     setState(() {
@@ -110,6 +137,10 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             Text(
               '$_counter',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            Text(
+              data,
               style: Theme.of(context).textTheme.headlineMedium,
             ),
           ],
